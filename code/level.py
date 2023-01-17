@@ -7,73 +7,46 @@ class Level:
     def __init__(self, screen):
         self.screen = screen
         # create a array in a certain size with the vaule 0 or 1
-        self.map = np.random.randint(2, size=(ARR_H,ARR_W))
+        self.map = np.random.randint(2, size=(ROWS,COLUMNS))
 
-    def update(self):
-        self.map = np.random.randint(2, size=(ARR_H,ARR_W))
+    def resetLevel(self):
+        self.map = np.random.randint(2, size=(ROWS,COLUMNS))
         return self.map
 
-    def display(self):
-        # Creates a copy of previous array with its content
-        self.next_map = self.map.copy()
-
-        for x in range(ARR_W - 1):
-            for y in range(ARR_H - 1):
-
-                num = 0
-                #if self.next_map[x - 1][y - 1] == 1:
-                #    num += 1
-                #if self.next_map[x][y - 1] == 1:
-                #    num += 1
-                #if self.next_map[x + 1][y - 1] == 1:
-                #    num += 1
-                #if self.next_map[x - 1][y] == 1:
-                #    num += 1
-                #if self.next_map[x + 1][y] == 1:
-                #    num += 1
-                #if self.next_map[x - 1][y + 1] == 1:
-                #    num += 1
-                #if self.next_map[x][y + 1] == 1:
-                #    num += 1
-                #if self.next_map[x + 1][y + 1] == 1:
-                #    num += 1
-                if self.next_map[y - 1][x - 1] == 1:
-                    num += 1
-                if self.next_map[y][x - 1] == 1:
-                    num += 1
-                if self.next_map[y + 1][x - 1] == 1:
-                    num += 1
-                if self.next_map[y - 1][x] == 1:
-                    num += 1
-                if self.next_map[y + 1][x] == 1:
-                    num += 1
-                if self.next_map[y - 1][x + 1] == 1:
-                    num += 1
-                if self.next_map[y][x + 1] == 1:
-                    num += 1
-                if self.next_map[y + 1][x + 1] == 1:
-                    num += 1
-
-                
-                if self.next_map[x][y] == 1 and (num == 2 or num == 3):
-                    self.next_map[x][y] = 1
-                elif self.next_map[x][y] == 0 and num == 3:
-                    self.next_map[x][y] = 1
-                else:
-                    self.next_map[x][y] = 0    
-                print(num)
-                self.map = self.next_map
-        return self.map
 
     def render(self):
         # Goes throught each element and draws a Rect, 0 (dead = white), 1 (alive = black)
-        for row_index, rows in enumerate(self.map):
-            for col_index, cols in enumerate(rows):
-                x = col_index * TILESIZE
-                y = row_index * TILESIZE
-                if cols == 0:
-                    pg.draw.rect(self.screen, (255,255,255), (x, y, TILESIZE - TILE_OFFSET,TILESIZE - TILE_OFFSET))
-                elif cols == 1:
-                    pg.draw.rect(self.screen, (0,0,0),  (x,y, TILESIZE - TILE_OFFSET,TILESIZE - TILE_OFFSET))
+        for x in range(ROWS):
+            for y in range(COLUMNS):
+                x_pos = x * TILESIZE
+                y_pos = y * TILESIZE
+                if self.map[x][y] == 1:
+                    pg.draw.rect(self.screen, (0,0,0), (x_pos, y_pos, TILESIZE -1, TILESIZE -1))
+                else:
+                    pg.draw.rect(self.screen, (255,255,255), (x_pos, y_pos, TILESIZE -1, TILESIZE -1))
 
-        self.display()
+        # Uses the neighbors function and then applies the rules of
+        # Conways game of life and updates the tile with either 
+        # dead or alive (0 or 1)
+        for x in range(ROWS):
+            for y in range(COLUMNS):
+                neighbors = self.neighbors(x, y)
+                state = self.map[x][y]       
+                if state == 0 and neighbors == 3:
+                    self.map[x][y] = 1
+                elif state == 1 and (neighbors < 2 or neighbors > 3):
+                    self.map[x][y] = 0
+                else:
+                    self.map[x][y] = state
+
+    # Checks all the neighbor around x and y, with a wrap around the grid using modilo
+    # then returns the added sum of neighbors
+    def neighbors(self, x ,y):     
+        sum = 0
+        for i in range(-1, 2):
+            for j in range(-1 ,2):
+                col = (x + i + COLUMNS) % COLUMNS
+                row = (y + j + ROWS) % ROWS
+                sum += self.map[row][col]
+        sum -= self.map[x][y]
+        return sum
